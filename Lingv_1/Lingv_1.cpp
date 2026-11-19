@@ -362,12 +362,202 @@ void task2(std::string result_code,
     }
     std::cout << "\n===========================\n";
 }
+std::string getNextWord(std::string source) 
+{
+    if (source.empty()) {
+        return "";
+    }
+
+    std::istringstream stream(source);
+    std::string word;
+
+    if (stream >> word) {
+        std::streampos pos = stream.tellg();
+        if (pos != -1) {
+            source = source.substr(static_cast<size_t>(pos));
+        }
+        else {
+            source.clear();
+        }
+        return word;
+    }
+
+    return "";
+}
+std::string popNextWord(std::string& source) {
+    if (source.empty()) {
+        return "";
+    }
+
+    std::istringstream stream(source);
+    std::string word;
+
+    // Считываем первое слово
+    if (stream >> word) {
+        // Находим позицию, где закончилось это слово в исходной строке
+        // tellg() вернет позицию после прочитанного слова и пробелов
+        std::streampos pos = stream.tellg();
+
+        if (pos != -1) {
+            // Обрезаем строку, оставляя только остаток
+            source = source.substr(static_cast<size_t>(pos));
+        }
+        else {
+            // Если достигли конца, очищаем строку полностью
+            source.clear();
+        }
+
+        return word;
+    }
+
+    return "";
+}
+int get_num(std::string& source)
+{
+    std::string numStr = getNextWord(source);
+
+    if (!numStr.empty()) {
+        int number = std::stoi(numStr);
+        return number;
+    }
+    else
+        return -1;
+}
+int pop_num(std::string& source)
+{
+    std::string numStr = popNextWord(source);
+
+    if (!numStr.empty()) {
+        int number = std::stoi(numStr);
+        return number;
+    }
+    else
+        return -1;
+}
+class expression {
+public:
+    expression(expression* parent, std::string name)
+    {
+        this->parent = parent;
+        count = -1;
+    }
+    expression() : expression(nullptr, "PROGRAM")
+    {
+        
+    }
+    expression& append(int lecsem)
+    {
+        stack.push_back(lecsem);
+        return *this;
+    }
+    expression& add(int lecsem)
+    {
+        child.push_back(new expression (this, ""));
+        stack.push_back(count);
+        count--;
+
+
+        return *child[child.size()-1];
+    }
+    expression& close(int lecsem = 0)
+    {
+        return *parent;
+    }
+    int end()
+    {
+        return stack[stack.size() - 1];
+    }
+private:
+    std::string name;
+    std::vector<int> stack;
+    std::vector<expression*> child;
+    expression* parent;
+    int count;
+};
+void replaceAll(std::string& str, const std::string& from, const std::string& to) {
+    if (from.empty())
+        return;
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+}
+int recursion(char TABLE[16][16], std::string& result_code, expression& current, int prev_lecsem, int deep, AlphavitLecsem result_alp)
+{
+    int lecsem = get_num(result_code);
+
+    for (int lecsem = get_num(result_code); lecsem >= 0; lecsem = get_num(result_code))
+    {
+        if (TABLE[prev_lecsem][lecsem] == '<')
+        {
+            pop_num(result_code);
+            if ((lecsem == 0) || (lecsem == 1))
+                pop_num(result_code);
+            current = current.add(lecsem);
+            /*if (lecsem <= 13)
+                std::cout << std::string(" ", deep + 1) << result_alp[lecsem].first << std::endl;*/
+            recursion(TABLE, result_code, current, lecsem, deep + 1, result_alp);
+            continue;
+
+        }
+        if (TABLE[prev_lecsem][lecsem] == '=')
+        {
+            pop_num(result_code);
+            if ((lecsem == 0) || (lecsem == 1))
+                pop_num(result_code);
+            current = current.append(lecsem);
+            /*if (lecsem <= 13)
+                std::cout << std::string(" ", deep) << result_alp[lecsem].first << std::endl;*/
+        }
+        if (TABLE[prev_lecsem][lecsem] == '>')
+        {
+            current = current.close();
+            return prev_lecsem;
+        }
+        prev_lecsem = lecsem;
+    }
+}
+void task3(std::string result_code,
+    std::map<std::string, std::pair<int, int>> result_alp)
+{
+    char TABLE[16][16] = {
+        //       <c>  <i>  MAX   =    0    if   (    X    .   GT    )    T    *    ,    \n
+        /* 0 */ {' ', ' ', '*', ' ', '*', ' ', ' ', '*', ' ', '*', ' ', ' ', ' ', ' ', '>'}, // <const>
+        /* 1 */ {'<', ' ', '*', '=', '*', ' ', ' ', '*', '=', '*', '>', ' ', ' ', ' ', '>'}, // <ident>
+        /* - */ {'*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*'}, // MAX
+        /* 3 */ {'<', '<', '*', ' ', '*', ' ', ' ', '*', ' ', '*', ' ', ' ', ' ', ' ', '>'}, // =
+        /* - */ {'*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*'}, // 0
+        /* 5 */ {' ', ' ', '*', ' ', '*', ' ', '=', '*', ' ', '*', ' ', ' ', ' ', ' ', '>'}, // if
+        /* 6 */ {' ', '<', '*', ' ', '*', ' ', ' ', '*', ' ', '*', '=', ' ', ' ', ' ', '>'}, // (
+        /* - */ {'*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*'}, // X
+        /* 8 */ {' ', '=', '*', ' ', '*', ' ', ' ', '*', ' ', '*', ' ', ' ', ' ', ' ', '>'}, // .
+        /* - */ {'*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*'}, // GT
+        /* 10*/ {' ', '<', '*', ' ', '*', ' ', ' ', '*', ' ', '*', ' ', ' ', ' ', ' ', '>'}, // )
+        /* 11*/ {' ', ' ', '*', ' ', '*', ' ', ' ', '*', ' ', '*', ' ', ' ', '<', ' ', '>'}, // TYPE
+        /* 12*/ {' ', ' ', '*', ' ', '*', ' ', ' ', '*', ' ', '*', '>', ' ', ' ', '=', '>'}, // * 
+        /* 13*/ {' ', '<', '*', ' ', '*', ' ', ' ', '*', ' ', '*', ' ', ' ', ' ', ' ', '>'}, // ,
+        /* 14*/ {' ', '<', '*', ' ', '*', '<', ' ', '*', ' ', '*', ' ', '<', ' ', ' ', '='}  // \n
+    };
+    replaceAll(result_code, "\n", "14 ");
+    expression start;
+    AlphavitLecsem alph(result_alp);
+
+    recursion(TABLE, result_code, start, 14, 0, alph);
+
+
+
+
+
+ 
+}
 int main()
 {
     std::string result_code;
     std::map<std::string, std::pair<int, int>> result_alp;
     task1(&result_code, &result_alp);
     task2(result_code, result_alp);
+    task3(result_code, result_alp);
 
 }
 
