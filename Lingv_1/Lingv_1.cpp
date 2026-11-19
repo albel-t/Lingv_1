@@ -496,7 +496,7 @@ int recursion(char TABLE[16][16], std::string& result_code, expression& current,
                 pop_num(result_code);
             current = current.add(lecsem);
             /*if (lecsem <= 13)
-                std::cout << std::string(" ", deep + 1) << result_alp[lecsem].first << std::endl;*/
+                std::cout << std::string("  ", deep + 1) << result_alp[lecsem].first << std::endl;*/
             recursion(TABLE, result_code, current, lecsem, deep + 1, result_alp);
             continue;
 
@@ -508,7 +508,7 @@ int recursion(char TABLE[16][16], std::string& result_code, expression& current,
                 pop_num(result_code);
             current = current.append(lecsem);
             /*if (lecsem <= 13)
-                std::cout << std::string(" ", deep) << result_alp[lecsem].first << std::endl;*/
+                std::cout << std::string("  ", deep) << result_alp[lecsem].first << std::endl;*/
         }
         if (TABLE[prev_lecsem][lecsem] == '>')
         {
